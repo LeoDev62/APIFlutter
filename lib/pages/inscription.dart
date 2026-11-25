@@ -38,20 +38,24 @@ class _InscriptionPageState extends State<InscriptionPage> {
       return; // on s'arrête là
     }
 
-    // Envoi des infos au serveur pour créer le compte
-    final ok = await creerCompte(
+    // Envoi des infos au serveur pour créer le compte.
+    // creerCompte renvoie null si ça marche, sinon le texte de l'erreur.
+    final erreurServeur = await creerCompte(
         nom.text, prenom.text, email.text, motDePasse.text);
     if (!mounted) return;
 
-    if (ok) {
+    if (erreurServeur == null) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Compte créé, connecte-toi !')));
       // Compte créé : on renvoie vers la connexion (pas encore de token)
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (_) => const ConnexionPage()));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Inscription impossible (email déjà utilisé ?)')));
+      // On affiche la vraie raison donnée par le serveur, plus longtemps
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Inscription impossible. $erreurServeur'),
+        duration: const Duration(seconds: 10),
+      ));
     }
   }
 

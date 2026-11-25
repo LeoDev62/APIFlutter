@@ -32,7 +32,6 @@ class ProfilVue extends StatelessWidget {
         ligne(Icons.badge, 'Nom', profil['nom']?.toString()),
         ligne(Icons.badge_outlined, 'Prénom', profil['prenom']?.toString()),
         ligne(Icons.email, 'Email', profil['email']?.toString()),
-        ligne(Icons.security, 'Rôles', roles),
       ],
     );
   }

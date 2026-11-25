@@ -122,14 +122,44 @@ Future<void> chargerProfil(String emailSaisi) async {
   }
 }
 
+// Extrait un texte lisible de la réponse d'erreur du serveur.
+// API Platform met le détail dans "violations" (champs refusés),
+// "hydra:description" ou "detail".
+String messageErreur(http.Response r) {
+  String texte;
+  try {
+    final data = convert.jsonDecode(r.body);
+    final violations = data['violations'];
+    if (violations is List && violations.isNotEmpty) {
+      texte = violations
+          .map((v) => '${v['propertyPath']} : ${v['message']}')
+          .join(' ; ');
+    } else {
+      texte = (data['hydra:description'] ??
+              data['detail'] ??
+              data['description'] ??
+              data['message'] ??
+              r.body)
+          .toString();
+    }
+  } catch (_) {
+    texte = r.body; // la réponse n'est pas du JSON : on la montre telle quelle
+  }
+  // On coupe pour que ça tienne dans le petit message en bas de l'écran
+  return texte.length > 200 ? '${texte.substring(0, 200)}...' : texte;
+}
+
 // --- INSCRIPTION : crée un utilisateur (POST sur /users) ---
 // L'API répond 201 (= "créé") quand ça marche.
-Future<bool> creerCompte(
+// Renvoie null si tout va bien, sinon le TEXTE de l'erreur (code + détail
+// donné par le serveur), pour pouvoir l'afficher et comprendre le problème.
+Future<String?> creerCompte(
     String nom, String prenom, String email, String mdp) async {
   try {
     final reponse = await http.post(
       Uri.parse('$baseUrl/users'),
-      headers: entetes(),
+      // API Platform attend par défaut le format JSON-LD pour créer un objet
+      headers: entetes(contentType: 'application/ld+json'),
       body: convert.jsonEncode({
         'nom': nom,
         'prenom': prenom,
@@ -137,9 +167,11 @@ Future<bool> creerCompte(
         'password': mdp,
       }),
     );
-    return reponse.statusCode == 201;
-  } catch (_) {
-    return false;
+    if (reponse.statusCode == 201) return null; // créé : pas d'erreur
+    return 'Erreur ${reponse.statusCode} : ${messageErreur(reponse)}';
+  } catch (e) {
+    // pas de réseau, serveur éteint, adresse bloquée...
+    return 'Serveur injoignable ($e)';
   }
 }
 
