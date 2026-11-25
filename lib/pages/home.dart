@@ -7,9 +7,18 @@ import '../widgets/demander_texte.dart';
 import '../widgets/message_tile.dart';
 import '../widgets/profil_vue.dart';
 import 'admin.dart';
+import 'connexion.dart';
+import 'inscription.dart';
 
 // ============================================================
 // ÉCRAN PRINCIPAL (titre : "Forum" ou "Profil" selon l'onglet)
+//
+// Deux modes :
+//  - VISITEUR (pas connecté) : on lit les messages, c'est tout.
+//    Pas de bouton +, pas de boutons sous les messages, pas de profil.
+//    Le menu de droite propose "connexion" et "inscription".
+//  - CONNECTÉ : on peut écrire, répondre, modifier, supprimer,
+//    voir son profil, et accéder à l'administration.
 // ============================================================
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,6 +29,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   // Onglet sélectionné dans la barre du bas : 0 = Post, 1 = Profil
+  // (un visiteur reste toujours sur 0 : il n'a pas de barre du bas)
   int onglet = 0;
 
   // Messages chargés depuis l'API
@@ -71,21 +81,13 @@ class _HomePageState extends State<HomePage> {
     await apresAction(ok, "Suppression impossible (ce message n'est pas à toi ?)");
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      // Scaffold = squelette d'un écran (barre du haut, contenu, barre du bas...)
-
-      // --- Barre du haut : titre + bouton déconnecter + bouton menu ---
-      appBar: AppBar(
-        title: Text(onglet == 0 ? 'Forum' : 'Profil'),
-        actions: const [BoutonDeconnexion(), BoutonMenu()],
-      ),
-
-      // --- Menu qui s'ouvre avec l'icône hamburger (à droite) ---
-      endDrawer: Drawer(
-        child: ListView(
-          children: [
+  // Contenu du menu de droite (endDrawer), selon le mode
+  Widget menuDroite(bool connecte) {
+    return Drawer(
+      child: ListView(
+        children: [
+          if (connecte)
+            // Connecté : accès à l'administration
             ListTile(
               leading: const Icon(Icons.admin_panel_settings),
               title: const Text('Administration'),
@@ -95,13 +97,65 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const AdminPage()));
               },
+            )
+          else
+            // Visiteur : deux boutons pour entrer dans l'application
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch, // boutons pleine largeur
+                children: [
+                  ElevatedButton(
+                    child: const Text('connexion'),
+                    onPressed: () {
+                      Navigator.pop(context); // ferme le menu
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => const ConnexionPage()));
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    child: const Text('inscription'),
+                    onPressed: () {
+                      Navigator.pop(context); // ferme le menu
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const InscriptionPage()));
+                    },
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Connecté ou simple visiteur ?
+    final connecte = estConnecte;
+    // Un visiteur ne voit que les messages, quel que soit l'onglet
+    final voirMessages = !connecte || onglet == 0;
+
+    return Scaffold(
+      // Scaffold = squelette d'un écran (barre du haut, contenu, barre du bas...)
+
+      // --- Barre du haut : titre + (déconnecter si connecté) + menu ---
+      appBar: AppBar(
+        title: Text(voirMessages ? 'Forum' : 'Profil'),
+        actions: [
+          if (connecte) const BoutonDeconnexion(),
+          const BoutonMenu(),
+        ],
       ),
 
+      // --- Menu de droite, différent selon le mode ---
+      endDrawer: menuDroite(connecte),
+
       // --- Contenu : liste des messages OU profil selon l'onglet ---
-      body: onglet == 0
+      body: voirMessages
           ? (chargement
               ? const Center(child: CircularProgressIndicator())
               : messages.isEmpty
@@ -113,6 +167,7 @@ class _HomePageState extends State<HomePage> {
                         for (final m in messages)
                           MessageTile(
                             message: m,
+                            interactif: connecte, // visiteur = lecture seule
                             onReply: repondre,
                             onEdit: modifier,
                             onDelete: supprimer,
@@ -121,8 +176,8 @@ class _HomePageState extends State<HomePage> {
                     ))
           : const ProfilVue(),
 
-      // --- Bouton rond "+" : ajoute un nouveau message (seulement sur Post) ---
-      floatingActionButton: onglet == 0
+      // --- Bouton rond "+" : écrire un message (connecté, onglet Post) ---
+      floatingActionButton: connecte && onglet == 0
           ? FloatingActionButton(
               child: const Icon(Icons.add),
               onPressed: () async {
@@ -135,15 +190,17 @@ class _HomePageState extends State<HomePage> {
             )
           : null,
 
-      // --- Barre du bas : "Post" et "Profil" ---
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: onglet,
-        onTap: (i) => setState(() => onglet = i),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.article), label: 'Post'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
-        ],
-      ),
+      // --- Barre du bas : "Post" et "Profil" (seulement si connecté) ---
+      bottomNavigationBar: connecte
+          ? BottomNavigationBar(
+              currentIndex: onglet,
+              onTap: (i) => setState(() => onglet = i),
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.article), label: 'Post'),
+                BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+              ],
+            )
+          : null,
     );
   }
 }

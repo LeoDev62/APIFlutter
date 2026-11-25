@@ -50,8 +50,12 @@ class _ConnexionPageState extends State<ConnexionPage> {
                   final ok = await seConnecter(email.text, motDePasse.text);
                   if (!mounted) return; // l'écran a été fermé entre-temps
                   if (ok) {
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (_) => const HomePage()));
+                    // On repart de zéro sur l'accueil, maintenant connecté :
+                    // l'historique est vidé pour ne pas revenir à la version visiteur
+                    Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const HomePage()),
+                        (route) => false);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                         content: Text('Email ou mot de passe incorrect')));

@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../api.dart';
-import '../pages/connexion.dart';
+import '../pages/home.dart';
 
 // ============================================================
 // BOUTONS DE LA BARRE DU HAUT (AppBar)
 // ============================================================
 
 // Bouton "déconnecter" : efface le token et le profil, puis revient à
-// l'écran de connexion. pushAndRemoveUntil(..., (route) => false) vide
-// l'historique : le bouton retour ne permet pas de revenir dans l'app.
+// l'écran des messages en mode visiteur (lecture seule).
+// pushAndRemoveUntil(..., (route) => false) vide l'historique :
+// le bouton retour ne permet pas de revenir dans la session fermée.
 class BoutonDeconnexion extends StatelessWidget {
   const BoutonDeconnexion({super.key});
 
@@ -23,7 +24,7 @@ class BoutonDeconnexion extends StatelessWidget {
         profil = {};
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const ConnexionPage()),
+          MaterialPageRoute(builder: (_) => const HomePage()),
           (route) => false,
         );
       },

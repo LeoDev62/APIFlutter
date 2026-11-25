@@ -32,6 +32,10 @@ String token = '';
 // Clés possibles : id, nom, prenom, email, roles
 Map<String, dynamic> profil = {};
 
+// true si quelqu'un est connecté (un token est présent).
+// Sinon, on est "visiteur" : on peut lire les messages sans agir dessus.
+bool get estConnecte => token.isNotEmpty;
+
 // En-têtes envoyés avec chaque requête.
 // Si on est connecté, on ajoute le token ("Bearer" = porteur du jeton).
 Map<String, String> entetes(

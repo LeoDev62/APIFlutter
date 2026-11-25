@@ -8,9 +8,12 @@ import 'demander_texte.dart';
 // et (récursivement) toutes ses réponses décalées vers la droite.
 // Il ne parle pas au serveur lui-même : il appelle les fonctions
 // onReply / onEdit / onDelete fournies par HomePage.
+// interactif = false (visiteur non connecté) : on ne voit que le message,
+// sans les boutons répondre / modifier / supprimer.
 // ============================================================
 class MessageTile extends StatelessWidget {
   final Message message;
+  final bool interactif;
   final Future<void> Function(Message parent, String texte) onReply;
   final Future<void> Function(Message message, String texte) onEdit;
   final Future<void> Function(Message message) onDelete;
@@ -21,6 +24,7 @@ class MessageTile extends StatelessWidget {
     required this.onReply,
     required this.onEdit,
     required this.onDelete,
+    this.interactif = true,
   });
 
   @override
@@ -58,7 +62,9 @@ class MessageTile extends StatelessWidget {
           ),
         ),
 
-        // Les boutons sous le message (collés grâce à styleBouton)
+        // Les boutons sous le message (collés grâce à styleBouton),
+        // visibles seulement pour un utilisateur connecté
+        if (interactif)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -89,7 +95,10 @@ class MessageTile extends StatelessWidget {
               child: const Text('supprimer'),
             ),
           ],
-        ),
+        )
+        else
+          // Visiteur : un petit espace à la place des boutons
+          const SizedBox(height: 6),
 
         // Les réponses : décalées de 32 px à gauche, mais jusqu'au bord droit
         Padding(
@@ -102,6 +111,7 @@ class MessageTile extends StatelessWidget {
                   onReply: onReply,
                   onEdit: onEdit,
                   onDelete: onDelete,
+                  interactif: interactif,
                 ),
             ],
           ),

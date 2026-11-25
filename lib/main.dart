@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'pages/connexion.dart';
+import 'pages/home.dart';
 
 // ============================================================
 // POINT D'ENTRÉE : lance l'application
@@ -17,7 +17,8 @@ class MyApp extends StatelessWidget {
     // MaterialApp = la "base" de toute app Flutter (thème, navigation...)
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: ConnexionPage(), // l'app démarre sur l'écran de connexion
+      // L'app démarre sur les messages, ouverts à tous (même sans compte)
+      home: HomePage(),
     );
   }
 }
